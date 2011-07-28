@@ -1,24 +1,122 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<style>
 
+		#cool_or_not li.voted {
+			color: #fff;
+		}		
+
+		#cool_or_not li.voted a {
+			display: none;
+		}
+
+		#cool_or_not li.up {
+			background: green;
+		}
+
+		#cool_or_not li.down {
+			background: red;
+		}
+	</style>
 </head>
 <body>
 
-	<script src="../src/election.js"></script>
-	<script src="../src/candidate.js"></script>
-	<script src="../src/vote.js"></script>
+	<div id="cool_or_not">
+		<h2>Cool or Not</h2>
+		<ul>
+			<li>Brendan <a href="#" class="up">Cool</a> <a href="#" class="down">Not</a></li>
+			<li>Loren <a href="#" class="up">Cool</a> <a href="#" class="down">Not</a></li>
+			<li>Damian <a href="#" class="up">Cool</a> <a href="#" class="down">Not</a></li>
+		</ul>
+	</div>
+
+	<div id="rate_it">
+		<h2>Rate it</h2>
+		<ul>
+			<li>Brendan 
+				<a href="#">1</a>
+				<a href="#">2</a>
+				<a href="#">3</a>
+				<a href="#">4</a>
+				<a href="#">5</a>
+				<span>Average Rating: <span class="average"></span></span>
+			</li>
+			<li>Loren 
+				<a href="#">1</a>
+				<a href="#">2</a>
+				<a href="#">3</a>
+				<a href="#">4</a>
+				<a href="#">5</a>
+				<span>Average Rating: <span class="average"></span></span>
+			</li>
+			<li>Damian 
+				<a href="#">1</a>
+				<a href="#">2</a>
+				<a href="#">3</a>
+				<a href="#">4</a>
+				<a href="#">5</a>
+				<span>Average Rating: <span class="average"></span></span>
+			</li>
+		</ul>
+	</div>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+	<script src="../src/electoral.js"></script>
 	<script>
 
-		var name_contest = new Electoral.Election();
-		var bob = new Electoral.Candidate({ name: 'bob' });
+		(function() {
 
-		name_contest.nominate(bob);
-		
-		console.log("bob's votes: " + bob.ups + " ups and " + bob.downs + " downs."); 
+			var cool_or_not = new Electoral.Election();
 
-		
+			$('#cool_or_not li').each(function(i, li) {
+				var candidate = new Electoral.Candidate();
+				li.id = candidate.id;
+				cool_or_not.nominate(candidate);
+			});
+
+			$('#cool_or_not a').click(function(e) {
+				e.preventDefault();				
+				
+				var $target = $(e.target);
+				var direction = $target.hasClass('up') ? 1 : 0;
+				var candidate = cool_or_not.find($target.parent('li').first().attr('id'));
+				var vote = new Electoral.Vote( direction );
+
+				candidate.receive(vote);
+				
+				$target.parent('li').first().addClass('voted').addClass( direction ? 'up' : 'down' );
+			});
+
+			console.log('cool or not:', cool_or_not);
+		})();		
+
+		(function() {
+			
+			var rate_it = new Electoral.Election();
 	
+			$('#rate_it li').each(function(i, li) {
+				var candidate = new Electoral.Candidate();
+				li.id = candidate.id;
+				rate_it.nominate(candidate);
+			});
+			
+			$('#rate_it a').click(function(e) {
+				e.preventDefault();
+
+				var $target = $(e.target);
+				var $li = $target.parent('li').first();
+				var rating = parseInt($target.text(), 10);
+				var candidate = rate_it.find($li.attr('id'));
+				var vote = new Electoral.Vote(rating);
+				candidate.receive(vote);
+				
+				$li.find('.average').first().text(candidate.average());
+			});
+
+			console.log('rate it:', rate_it);
+		})();
+
 	</script>
 </body>
 </html>
