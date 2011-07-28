@@ -5,17 +5,19 @@
 </head>
 <body>
 
-
-	<script src="../src/electoral.js"></script>
+	<script src="../src/election.js"></script>
 	<script src="../src/candidate.js"></script>
 	<script src="../src/vote.js"></script>
 	<script>
 
-		var bob = { name: 'bob' }
+		var name_contest = new Electoral.Election();
+		var bob = new Electoral.Candidate({ name: 'bob' });
 
-		Electoral.nominate(bob);		
+		name_contest.nominate(bob);
+		
+		console.log("bob's votes: " + bob.ups + " ups and " + bob.downs + " downs."); 
 
-		console.log(bob);
+		
 	
 	</script>
 </body>
