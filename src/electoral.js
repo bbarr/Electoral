@@ -11,6 +11,21 @@ var Electoral = {
 		if ( !(is instanceof should) ) {
 			throw new Error(is.toString() + ' should have been an instance of ' + should.toString());
 		}
+	},
+
+	_each: function(arr, fn, scope) {	
+		
+		var len = arr.length,
+		    i = 0,
+		    scope = scope || this,
+		    returned;
+	
+		for (; i < len; i++) {
+			returned = fn.call(scope, arr[i], i);
+			if (returned) {
+				return returned;
+			}
+		}		
 	}
 };
 
@@ -27,46 +42,24 @@ Electoral.Election.prototype = {
 	},
 
 	drop: function(id) {
-	
-		var candidates = this.candidates,
-		    len = candidates.length,
-		    i = 0,
-		    candidate;
-
-		if (id instanceof Electoral.Candidate) {
-			id = id.id;
+		var candidate = this.find(id);
+		if (candidate) {
+			return this.candidates.splice(candidate._last_known_index, 1);
 		}
-
-		for (; i < len; i++) {
-			candidate = candidates[i];
-			if (candidate.id === id) {
-				candidates.splice(i, 1);
-				return true;
-			}
-		}
-
-		return false;
 	},
 
 	find: function(id) {
-		
-		var candidates = this.candidates,
-		    len = candidates.length,
-		    i = 0,
-		    candidate;
 
 		if (id instanceof Electoral.Candidate) {
 			id = id.id;
 		}
 
-		for (; i < len; i++) {
-			candidate = candidates[i];
+		return Electoral._each(this.candidates, function(candidate, i) {
 			if (candidate.id === id) {
+				candidate._last_known_index = i;
 				return candidate;
 			}
-		}
-
-		return false;
+		});
 	}
 }
 
@@ -83,44 +76,44 @@ Electoral.Candidate.prototype = {
 	},
 
 	strike: function(vote_id) {
-		
-		var votes = this.votes,
-		    len = votes.length,
-		    i = 0,
-		    vote;
-
-		if (vote_id instanceof Electoral.Vote) {
-			vote_id = vote_id.id;
+		var vote = this.find(vote_id);
+		if (vote) {
+			return this.votes.splice(vote._last_known_index)
 		}
-
-		for (; i < len; i++) {
-			vote = votes[i];
-			if (vote.id == vote_id) {
-				this[ (vote.value) ? 'ups' : 'downs']--;
-				votes.splice(i, 1);
-				return true;
-			}
-		}
-
-		return false;
 	},
 
-	reduce: function(fn) {},
-
-	average: function() {
+	find: function(id) {
 		
-		var votes = this.votes,
-		    len = votes.length,
-		    i = 0,
-		    vote,
-		    average = 0;
-
-		for (; i < len; i++) {
-			vote = votes[i];
-			average += vote.value;
+		if (id instanceof Electoral.Vote) {
+			id = id.id;
 		}
 
-		return Math.floor((average / len) * 100) / 100;
+		return Electoral._each(this.votes, function(vote, i) {
+			if (vote.id === id) {
+				vote._last_known_index = i;
+				return vote;
+			}
+		});
+	},
+
+	reduce: function(fn) {
+
+		var reduced = [];
+
+		Electoral._each(this.votes, function(vote, i) {
+			var reduced_vote = fn(vote);
+			if (reduced_vote) {
+				reduced.push(reduced_vote);
+			}
+		});
+
+		return reduced;
+	},
+
+	average: function() {
+		var average = 0;
+		Electoral._each(this.votes, function(vote, i) { average += vote.value });
+		return Math.floor((average / this.votes.length) * 100) / 100;
 	}
 };
 
@@ -129,7 +122,7 @@ Electoral.Vote = function(value, meta) {
 	this.value = value;
 	this.id = Electoral._generate_id();
 	
-	for (var key in meta) this[key] = meta[key];	
+	for (var key in meta) this[key] = meta[key];
 }
 
 Electoral.Vote.prototype = {};
